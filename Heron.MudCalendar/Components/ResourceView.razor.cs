@@ -179,11 +179,15 @@ public partial class ResourceView : ComponentBase, IDisposable
     /// </summary>
     /// <param name="cell">The cell that was clicked.</param>
     /// <param name="row">The row that was clicked.</param>
+    /// <param name="resource">The resource the cell belongs to.</param>
     /// <returns></returns>
-    protected virtual Task OnCellLinkClicked(CalendarCell cell, int row)
+    protected virtual async Task OnCellLinkClicked(CalendarCell cell, int row, ResourceItem? resource = default)
     {
         var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
-        return Calendar.CellClicked.InvokeAsync(date);
+        if(Calendar.CellClicked.HasDelegate)
+            await Calendar.CellClicked.InvokeAsync(date);
+        if(Calendar.CellExtendedClicked.HasDelegate)
+            await Calendar.CellExtendedClicked.InvokeAsync(new CellClickedArgs { Date=date, ResourceId=resource?.Id});
     }
 
     /// <summary>

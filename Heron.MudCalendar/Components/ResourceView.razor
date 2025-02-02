@@ -9,15 +9,15 @@
             <div>
                 <div class="@HeaderClass">
                     <div></div>
-                    <MudGrid Spacing="0" Justify="Justify.SpaceBetween">
+                    <div style="display: flex">
                         @foreach (var resource in Calendar.Resources)
                         {
-                            <MudItem Style="min-width: 270px;">
+                            <div style="flex: auto; min-width: 200px;">
                                 @(Calendar.HeaderTemplate(resource))
-                            </MudItem>
+                            </div>
                             <MudDivider FlexItem Vertical></MudDivider>
                         }
-                    </MudGrid>
+                    </div>
                 </div>
             </div>
             <div class="flex-grow-1">
@@ -28,34 +28,34 @@
                             <div class="mud-cal-week-layer">
                                 <div class="@GridClass">
                                     <div></div>
-                                    <MudGrid Spacing="0" Justify="Justify.SpaceBetween">
-                                @foreach (var resource in Calendar.Resources)
-                                {
-                                    <MudItem Style="min-width: 270px;">
-                                        <MudDropContainer T="CalendarItem"
-                                        Items="Calendar.Items"
-                                        ItemsSelector="@((item, dropzone) => item.Id == dropzone)"
-                                        ItemDisabled="@(_ => !Calendar.EnableDragItems)"
-                                        ItemDropped="ItemDropped"
-                                        CanDropClass="mud-cal-drop-ok">
-                                            <ChildContent>
-                                                
+                                    <div style="display: flex">
+                                        @foreach (var resource in Calendar.Resources)
+                                        {
+                                            <div style="flex: auto; min-width: 200px">
+                                                <MudDropContainer T="CalendarItem"
+                                                                  Items="Calendar.Items"
+                                                                  ItemsSelector="@((item, dropzone) => item.Id == dropzone)"
+                                                                  ItemDisabled="@(_ => !Calendar.EnableDragItems)"
+                                                                  ItemDropped="ItemDropped"
+                                                                  CanDropClass="mud-cal-drop-ok">
+                                                    <ChildContent>
+
                                                         @{
-                                                            if(Columns.ContainsKey(resource))
+                                                            if (Columns.ContainsKey(resource))
                                                             {
                                                                 var cell = Columns[resource];
                                                                 @RenderCell(cell)
                                                             }
-                                                         }
-                                            </ChildContent>
-                                            <ItemRenderer>
-                                                @RenderTemplate(context)
-                                            </ItemRenderer>
-                                        </MudDropContainer>
-                                    </MudItem>
-                                    <MudDivider FlexItem Vertical></MudDivider>
-                                }
-                            </MudGrid>                            
+                                                        }
+                                                    </ChildContent>
+                                                    <ItemRenderer>
+                                                        @RenderTemplate(context)
+                                                    </ItemRenderer>
+                                                </MudDropContainer>
+                                            </div>
+                                            <MudDivider FlexItem Vertical></MudDivider>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -75,11 +75,11 @@
     /// Renders the title of a day.
     /// </summary>
     protected virtual RenderFragment RenderDayTitle(CalendarCell cell) => __builder =>
-        {
-    __builder.AddContent(1, cell.Date.ToString("ddd"));
-    __builder.AddContent(2, " ");
-    __builder.AddContent(3, cell.Date.Day);
-        };
+    {
+        __builder.AddContent(1, cell.Date.ToString("ddd"));
+        __builder.AddContent(2, " ");
+        __builder.AddContent(3, cell.Date.Day);
+    };
 
     /// <summary>
     /// Renders the day/week structure.
@@ -108,7 +108,7 @@
     /// <summary>
     /// Renders an individual cell.
     /// </summary>
-    protected virtual RenderFragment RenderCell(CalendarCell cell) =>
+    protected virtual RenderFragment RenderCell(CalendarCell cell, ResourceItem resource) =>
     @<div class="mud-cal-week-cell-holder">
         @for (var i = 0; i < CellsInDay; i++)
     {
@@ -116,7 +116,7 @@
         <MudDropZone T="CalendarItem" OnlyZone="true" Style="@CellHeightStyle()" Identifier="@string.Concat(cell.Date.Date.ToString("d"), "_", row.ToString())">
             @if (Calendar.CellClicked.HasDelegate)
         {
-            <MudLink @onclick="() => OnCellLinkClicked(cell, row)" Class="mud-cal-week-cell-link">
+            <MudLink @onclick="() => OnCellLinkClicked(cell, row, resource)" Class="mud-cal-week-cell-link">
                 <div class="mud-cal-week-link"></div>
             </MudLink>
         }
