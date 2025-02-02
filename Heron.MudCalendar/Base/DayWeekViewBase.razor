@@ -46,23 +46,11 @@
     @<div>
         <div class="@HeaderClass">
             <div></div>
-            @if(Calendar.Resources!=null && Calendar.Resources.Any())
+            @foreach (var cell in Cells)
             {
-                <MudPaper Square="true" Class="d-flex justify-space-around">
-                @foreach(var resource in Calendar.Resources)
-                {
-                    @(Calendar.HeaderTemplate(resource))                    
-                    <MudDivider Vertical="true" FlexItem="true" />
-                }
-                </MudPaper>
-            }
-            else{
-                foreach (var cell in Cells)
-                {
-                    <div aria-label="@($"{cell.Date:dddd} {cell.Date.Day}")">
-                        @RenderDayTitle(cell)
-                    </div>
-                }
+                <div aria-label="@($"{cell.Date:dddd} {cell.Date.Day}")">
+                    @RenderDayTitle(cell)
+                </div>
             }
         </div>
     </div>;
