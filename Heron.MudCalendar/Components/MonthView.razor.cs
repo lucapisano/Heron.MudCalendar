@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Utilities;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Heron.MudCalendar;
 
@@ -131,7 +132,7 @@ public partial class MonthView : CalendarViewBase, IDisposable
     {
         if (Calendar.CellClicked.HasDelegate)
         {
-            await Calendar.CellClicked.InvokeAsync(cell.Date);
+            await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = cell.Date, ResourceId = null });
         }
     }
 

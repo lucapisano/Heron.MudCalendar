@@ -30,7 +30,7 @@ public static class CalendarViewName
             [CalendarView.Week] = localizer["Week"],
             [CalendarView.WorkWeek] = localizer["WorkWeek"],
             [CalendarView.Day] = localizer["Day"],
-            [CalendarView.Resource] = localizer["Day"]
+            [CalendarView.Resource] = localizer["Resource"]
         };
     }
 }

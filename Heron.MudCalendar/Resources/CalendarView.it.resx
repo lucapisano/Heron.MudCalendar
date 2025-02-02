@@ -1,4 +1,7 @@
 <root>
+    <data name="Resource" xml:space="preserve">
+        <value>Risorsa</value>
+    </data>
     <data name="Day" xml:space="preserve">
         <value>Giorno</value>
     </data>

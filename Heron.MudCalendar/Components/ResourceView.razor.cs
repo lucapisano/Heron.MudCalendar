@@ -185,9 +185,7 @@ public partial class ResourceView : ComponentBase, IDisposable
     {
         var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
         if(Calendar.CellClicked.HasDelegate)
-            await Calendar.CellClicked.InvokeAsync(date);
-        if(Calendar.CellExtendedClicked.HasDelegate)
-            await Calendar.CellExtendedClicked.InvokeAsync(new CellClickedArgs { Date=date, ResourceId=resource?.Id});
+            await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = date, ResourceId = resource?.Id });
     }
 
     /// <summary>
