@@ -15,6 +15,9 @@ public partial class CalendarDatePicker
             {
                 case CalendarView.Day:
                     return Date?.ToString("dd MMM yyyy");
+                
+                case CalendarView.Resource:
+                    return Date?.ToString("dd MMM yyyy");
 
                 case CalendarView.Week:
                 case CalendarView.WorkWeek:

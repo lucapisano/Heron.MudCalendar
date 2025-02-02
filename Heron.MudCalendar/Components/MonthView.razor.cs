@@ -172,7 +172,6 @@ public partial class MonthView : CalendarViewBase, IDisposable
 
         return Calendar.ItemChanged.InvokeAsync(item);
     }
-
     protected override List<CalendarCell> BuildCells()
     {
         var cells = new List<CalendarCell>();

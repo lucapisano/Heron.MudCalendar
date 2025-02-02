@@ -1,72 +1,76 @@
 @namespace Heron.MudCalendar
-@inherits CalendarViewBase
 @using Microsoft.JSInterop
 @inject IJSRuntime JsRuntime
 
-@Render
-
-@code {
-
-    /// <summary>
-    /// Renders the component.
-    /// </summary>
-    protected virtual RenderFragment Render =>
-    @<div class="mud-cal-week-view">
-        <div class="d-flex flex-column mud-height-full">
-            @RenderHeader
+<div class="mud-cal-week-view">
+    <div class="d-flex flex-column mud-height-full">
+        @if (Columns != null && Columns.Any())
+        {
+            <div>
+                <div class="@HeaderClass">
+                    <div></div>
+                    <MudGrid Spacing="0" Justify="Justify.SpaceBetween">
+                        @foreach (var resource in Calendar.Resources)
+                        {
+                            <MudItem Style="min-width: 270px;">
+                                @(Calendar.HeaderTemplate(resource))
+                            </MudItem>
+                            <MudDivider FlexItem Vertical></MudDivider>
+                        }
+                    </MudGrid>
+                </div>
+            </div>
             <div class="flex-grow-1">
                 <div class="d-block relative mud-height-full">
                     <div @ref="_scrollDiv" class="mud-cal-week-scroll" style="width: 100%;">
                         <div class="d-block relative">
                             @RenderTimes
-                            <MudDropContainer T="CalendarItem"
-                                              Items="Calendar.Items"
-                                              ItemsSelector="@((item, dropzone) => item.Id == dropzone)"
-                                              ItemDisabled="@(_ => !Calendar.EnableDragItems)"
-                                              ItemDropped="ItemDropped"
-                                              CanDropClass="mud-cal-drop-ok">
-                                <ChildContent>
-                                    @RenderCells
-                                </ChildContent>
-                                <ItemRenderer>
-                                    @RenderTemplate(context)
-                                </ItemRenderer>
-                            </MudDropContainer>
+                            <div class="mud-cal-week-layer">
+                                <div class="@GridClass">
+                                    <div></div>
+                                    <MudGrid Spacing="0" Justify="Justify.SpaceBetween">
+                                @foreach (var resource in Calendar.Resources)
+                                {
+                                    <MudItem Style="min-width: 270px;">
+                                        <MudDropContainer T="CalendarItem"
+                                        Items="Calendar.Items"
+                                        ItemsSelector="@((item, dropzone) => item.Id == dropzone)"
+                                        ItemDisabled="@(_ => !Calendar.EnableDragItems)"
+                                        ItemDropped="ItemDropped"
+                                        CanDropClass="mud-cal-drop-ok">
+                                            <ChildContent>
+                                                
+                                                        @{
+                                                            if(Columns.ContainsKey(resource))
+                                                            {
+                                                                var cell = Columns[resource];
+                                                                @RenderCell(cell)
+                                                            }
+                                                         }
+                                            </ChildContent>
+                                            <ItemRenderer>
+                                                @RenderTemplate(context)
+                                            </ItemRenderer>
+                                        </MudDropContainer>
+                                    </MudItem>
+                                    <MudDivider FlexItem Vertical></MudDivider>
+                                }
+                            </MudGrid>                            
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>;
+        }
+        else
+        {
+            <MudText>No resources available</MudText>
+        }
+    </div>
+</div>
 
-    /// <summary>
-    /// Renders the header that contains the day names.
-    /// </summary>
-    protected virtual RenderFragment RenderHeader =>
-    @<div>
-        <div class="@HeaderClass">
-            <div></div>
-            @if(Calendar.Resources!=null && Calendar.Resources.Any())
-            {
-                <MudPaper Square="true" Class="d-flex justify-space-around">
-                @foreach(var resource in Calendar.Resources)
-                {
-                    @(Calendar.HeaderTemplate(resource))                    
-                    <MudDivider Vertical="true" FlexItem="true" />
-                }
-                </MudPaper>
-            }
-            else{
-                foreach (var cell in Cells)
-                {
-                    <div aria-label="@($"{cell.Date:dddd} {cell.Date.Day}")">
-                        @RenderDayTitle(cell)
-                    </div>
-                }
-            }
-        </div>
-    </div>;
-
+@code {
     /// <summary>
     /// Renders the title of a day.
     /// </summary>
@@ -91,29 +95,12 @@
                 @DrawTime(row)
             }
             </div>
-            @foreach (var cell in Cells)
-        {
-            <div class="@DayCellClassname(cell, row)" style="@DayStyle(cell, row)">
+            <div class="@DayCellClassname(Columns.FirstOrDefault().Value, row)" style="@DayStyle(Columns.FirstOrDefault().Value, row)">
                 @if (Calendar.ShowCurrentTime && TimelineRow() == row)
             {
                 <hr class="mud-cal-current-time" style="@TimelineStyle()" />
             }
             </div>
-        }
-        }
-        </div>
-    </div>;
-
-    /// <summary>
-    /// Renders the cells.
-    /// </summary>
-    protected virtual RenderFragment RenderCells =>
-    @<div class="mud-cal-week-layer">
-        <div class="@GridClass">
-            <div></div>
-            @foreach (var cell in Cells)
-        {
-            @RenderCell(cell)
         }
         </div>
     </div>;

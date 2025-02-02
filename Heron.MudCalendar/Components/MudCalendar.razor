@@ -28,6 +28,9 @@
                             case CalendarView.Day:
                                 @RenderDayView
                                 break;
+                            case CalendarView.Resource:
+                                @RenderResourceView
+                                break;
                             case CalendarView.Week:
                                 @RenderWeekView
                                 break;
@@ -126,5 +129,11 @@
     /// </summary>
     protected virtual RenderFragment RenderDayView =>
         @<DayView />;
+
+    /// <summary>
+    /// Renders the resource view.
+    /// </summary>
+    protected virtual RenderFragment RenderResourceView =>
+        @<ResourceView />;
 
 }

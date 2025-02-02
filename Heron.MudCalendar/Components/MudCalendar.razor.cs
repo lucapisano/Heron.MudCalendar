@@ -158,6 +158,16 @@ public partial class MudCalendar : MudComponentBase
     public bool ShowDay { get; set; } = true;
 
     /// <summary>
+    /// If false the resource view is not shown.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to <c>true</c>.
+    /// </remarks>
+    [Parameter]
+    [Category(CategoryTypes.Calendar.Behavior)]
+    public bool ShowResource { get; set; } = true;
+
+    /// <summary>
     /// If false the week view is not shown.
     /// </summary>
     /// <remarks>
@@ -467,6 +477,7 @@ public partial class MudCalendar : MudComponentBase
             label += View switch
             {
                 CalendarView.Day => "Day",
+                CalendarView.Resource => "Day",
                 CalendarView.Week => "Week",
                 CalendarView.WorkWeek => "Work Week",
                 CalendarView.Month => "Month",
@@ -485,6 +496,7 @@ public partial class MudCalendar : MudComponentBase
             label += View switch
             {
                 CalendarView.Day => "Day",
+                CalendarView.Resource => "Day",
                 CalendarView.Week => "Week",
                 CalendarView.WorkWeek => "Work Week",
                 CalendarView.Month => "Month",
@@ -509,6 +521,7 @@ public partial class MudCalendar : MudComponentBase
         
         // Ensure that current view is allowed
         if ((View == CalendarView.Day && !ShowDay)
+            || (View == CalendarView.Resource && !ShowResource)
             || (View == CalendarView.Week && !ShowWeek)
             || (View == CalendarView.WorkWeek && !ShowWorkWeek)
             || (View == CalendarView.Month && !ShowMonth))
@@ -517,6 +530,7 @@ public partial class MudCalendar : MudComponentBase
             if (ShowWeek) View = CalendarView.Week;
             if (ShowWorkWeek) View = CalendarView.WorkWeek;
             if (ShowDay) View = CalendarView.Day;
+            if (ShowResource) View = CalendarView.Resource;
         }
     }
 
@@ -575,6 +589,7 @@ public partial class MudCalendar : MudComponentBase
         CurrentDay = View switch
         {
             CalendarView.Day => CurrentDay.AddDays(1),
+            CalendarView.Resource => CurrentDay.AddDays(1),
             CalendarView.Week => CurrentDay.AddDays(7),
             CalendarView.WorkWeek => CurrentDay.AddDays(7),
             CalendarView.Month => CurrentDay.AddMonths(1),
@@ -595,6 +610,7 @@ public partial class MudCalendar : MudComponentBase
         CurrentDay = View switch
         {
             CalendarView.Day => CurrentDay.AddDays(-1),
+            CalendarView.Resource => CurrentDay.AddDays(-1),
             CalendarView.Week => CurrentDay.AddDays(-7),
             CalendarView.WorkWeek => CurrentDay.AddDays(-7),
             CalendarView.Month => CurrentDay.AddMonths(-1),
@@ -681,6 +697,7 @@ public partial class MudCalendar : MudComponentBase
     {
         var list = new List<CalendarView>();
         if (ShowDay) list.Add(CalendarView.Day);
+        if (ShowResource) list.Add(CalendarView.Resource);
         if (ShowWeek) list.Add(CalendarView.Week);
         if (ShowWorkWeek) list.Add(CalendarView.WorkWeek);
         if (ShowMonth) list.Add(CalendarView.Month);

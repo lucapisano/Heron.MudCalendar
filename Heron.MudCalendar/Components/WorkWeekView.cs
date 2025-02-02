@@ -5,7 +5,6 @@ namespace Heron.MudCalendar;
 public class WorkWeekView : DayWeekViewBase
 {
     protected override int DaysInView => 5;
-
     protected override List<CalendarCell> BuildCells()
     {
         var cells = new List<CalendarCell>();

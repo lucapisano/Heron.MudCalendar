@@ -8,6 +8,7 @@ public abstract class CalendarViewBase : ComponentBase
     public MudCalendar Calendar { get; set; } = new();
 
     protected List<CalendarCell> Cells = new();
+    protected Dictionary<ResourceItem,List<CalendarCell>> ResourceCells = new();
 
     protected override void OnParametersSet()
     {

@@ -25,6 +25,9 @@ public class CalendarDateRange : DateRange
             case CalendarView.Day:
                 Start = _currentDay.Date;
                 break;
+            case CalendarView.Resource:
+                Start = _currentDay.Date;
+                break;
             case CalendarView.Week:
             case CalendarView.WorkWeek:
                 Start = GetFirstWeekDate(_currentDay, firstDayOfWeek);
@@ -41,6 +44,9 @@ public class CalendarDateRange : DateRange
         switch (View)
         {
             case CalendarView.Day:
+                End = _currentDay.Date;
+                break;
+            case CalendarView.Resource:
                 End = _currentDay.Date;
                 break;
             case CalendarView.Week:
