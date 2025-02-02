@@ -366,6 +366,12 @@ public partial class MudCalendar : MudComponentBase
     [Category(CategoryTypes.Calendar.Behavior)]
     [Parameter]
     public IEnumerable<CalendarItem> Items { get; set; } = new List<CalendarItem>();
+    /// <summary>
+    /// The data to display in the Calendar.
+    /// </summary>
+    [Category(CategoryTypes.Calendar.Behavior)]
+    [Parameter]
+    public IEnumerable<ResourceItem> Resources { get; set; } = new List<ResourceItem>();
     
     /// <summary>
     /// Called when the dates visible in the Calendar change.

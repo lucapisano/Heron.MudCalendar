@@ -55,6 +55,14 @@
             @<div class="mud-cal-cell-template">
                 <MudChip T="string" Label="true" Color="Color.Primary" Class="mud-cal-cell-template-chip">@calendarItem.Text</MudChip>
             </div>;
+    /// <summary>
+    /// Defines the cell content for the Calendar.  Can be overriden for different Views by defining DayTemplate, WeekTemplate and MonthTemplate.
+    /// </summary>
+    [Attributes.Category(CategoryTypes.Calendar.Template)]
+    [Parameter]
+    public RenderFragment<ResourceItem> HeaderTemplate { get; set; } =
+        resourceItem =>
+            @<MudText>@resourceItem.Name</MudText>;
 
     /// <summary>
     /// Renders the toolbar of the component including prev/next buttons, date picker and view switcher.

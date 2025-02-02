@@ -1,5 +1,4 @@
 namespace Heron.MudCalendar;
-
 public class CalendarItem
 {
     public DateTime Start { get; set; }
@@ -9,6 +8,10 @@ public class CalendarItem
     public bool AllDay { get; set; }
 
     public string Text { get; set; } = string.Empty;
+    /// <summary>
+    /// if the event is associated to a specific resource defined in Resources
+    /// </summary>
+    public string? ResourceId { get; set; }
 
     protected internal bool IsMultiDay => (End == null && Start.TimeOfDay > TimeSpan.FromHours(23)) ||
                                           (End.HasValue && End.Value.Date > Start.Date);
