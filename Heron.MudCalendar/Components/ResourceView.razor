@@ -44,7 +44,7 @@
                                                             if (Columns.ContainsKey(resource))
                                                             {
                                                                 var cell = Columns[resource];
-                                                                @RenderCell(cell)
+                                                                @RenderCell(cell, resource)
                                                             }
                                                         }
                                                     </ChildContent>
@@ -114,7 +114,7 @@
     {
     var row = i;
         <MudDropZone T="CalendarItem" OnlyZone="true" Style="@CellHeightStyle()" Identifier="@string.Concat(cell.Date.Date.ToString("d"), "_", row.ToString())">
-            @if (Calendar.CellClicked.HasDelegate)
+            @if (Calendar.CellClicked.HasDelegate || Calendar.CellExtendedClicked.HasDelegate)
         {
             <MudLink @onclick="() => OnCellLinkClicked(cell, row, resource)" Class="mud-cal-week-cell-link">
                 <div class="mud-cal-week-link"></div>
