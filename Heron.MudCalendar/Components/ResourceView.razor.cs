@@ -293,6 +293,10 @@ public partial class ResourceView : ComponentBase, IDisposable
         return (int)Math.Round(height);
     }
 
+    private async Task ScrollToTime()
+    {
+        throw new NotImplementedException();
+    }
     private async Task ScrollToDay()
     {
         var startMinutes = (Calendar.DayStartTime.Hour * 60) + Calendar.DayStartTime.Minute;
