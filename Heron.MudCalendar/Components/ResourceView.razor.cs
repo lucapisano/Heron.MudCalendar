@@ -26,11 +26,15 @@ public partial class ResourceView : ComponentBase, IDisposable
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
-
+        if (Columns == null || !Columns.Any())
+            return;
+        var time = DateTime.Now.TimeOfDay;
+        if (DateTime.Now.Date != Calendar.CurrentDay.Date)
+            time = Calendar.DayStartTime.ToTimeSpan();
+        await ScrollToTime(time);
         if (firstRender)
         {
-            if (Columns != null && Columns.Any())
-                await ScrollToDay();
+            //await ScrollToDay();
         }
     }
     protected override void OnParametersSet()
@@ -184,7 +188,7 @@ public partial class ResourceView : ComponentBase, IDisposable
     protected virtual async Task OnCellLinkClicked(CalendarCell cell, int row, ResourceItem? resource = default)
     {
         var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
-        if(Calendar.CellClicked.HasDelegate)
+        if (Calendar.CellClicked.HasDelegate)
             await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = date, ResourceId = resource?.Id });
     }
 
@@ -293,9 +297,17 @@ public partial class ResourceView : ComponentBase, IDisposable
         return (int)Math.Round(height);
     }
 
-    private async Task ScrollToTime()
+    private async Task ScrollToTime(TimeSpan? time = default)
     {
-        throw new NotImplementedException();
+        if (_scrollDiv.Id == default)
+            return;
+        time = time ?? new TimeSpan(Calendar.DayStartTime.Hour, Calendar.DayStartTime.Minute, 0);
+        var startMinutes = (time.Value.Hours * 60) + time.Value.Minutes;
+        var percent = (double)startMinutes / MinutesInDay;
+        var scrollTo = PixelsInDay * percent;
+
+        _jsService ??= new JsService(JsRuntime);
+        await _jsService.Scroll(_scrollDiv, (int)scrollTo);
     }
     private async Task ScrollToDay()
     {

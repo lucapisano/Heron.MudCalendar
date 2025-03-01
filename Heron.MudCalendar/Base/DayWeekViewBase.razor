@@ -82,7 +82,7 @@
             @foreach (var cell in Cells)
         {
             <div class="@DayCellClassname(cell, row)" style="@DayStyle(cell, row)">
-                @if (Calendar.ShowCurrentTime && TimelineRow() == row)
+                @if (DateTime.Now.Date==Calendar.CurrentDay.Date && Calendar.ShowCurrentTime && TimelineRow() == row)
             {
                 <hr class="mud-cal-current-time" style="@TimelineStyle()" />
             }

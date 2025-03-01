@@ -35,7 +35,7 @@
                                                 <MudDropContainer T="CalendarItem"
                                                                   Items="Calendar.Items"
                                                                   ItemsSelector="@((item, dropzone) => item.Id == dropzone)"
-                                                                  ItemDisabled="@(_ => !Calendar.EnableDragItems)"
+                                                                  ItemDisabled="@(_ => _.Disabled==true || !Calendar.EnableDragItems)"
                                                                   ItemDropped="ItemDropped"
                                                                   CanDropClass="mud-cal-drop-ok">
                                                     <ChildContent>
@@ -96,7 +96,7 @@
             }
             </div>
             <div class="@DayCellClassname(Columns.FirstOrDefault().Value, row)" style="@DayStyle(Columns.FirstOrDefault().Value, row)">
-                @if (Calendar.ShowCurrentTime && TimelineRow() == row)
+                @if (DateTime.Now.Date==Calendar.CurrentDay.Date && Calendar.ShowCurrentTime && TimelineRow() == row)
             {
                 <hr class="mud-cal-current-time" style="@TimelineStyle()" />
             }

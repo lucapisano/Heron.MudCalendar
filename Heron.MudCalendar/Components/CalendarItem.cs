@@ -1,6 +1,7 @@
 namespace Heron.MudCalendar;
 public class CalendarItem
 {
+    public bool Disabled { get; set; }
     public DateTime Start { get; set; }
     
     public DateTime? End { get; set; }
