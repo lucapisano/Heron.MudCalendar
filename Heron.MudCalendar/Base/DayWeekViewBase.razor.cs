@@ -1,5 +1,6 @@
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Utilities;
@@ -153,10 +154,10 @@ public abstract partial class DayWeekViewBase : CalendarViewBase, IDisposable
     /// <param name="cell">The cell that was clicked.</param>
     /// <param name="row">The row that was clicked.</param>
     /// <returns></returns>
-    protected virtual Task OnCellLinkClicked(CalendarCell cell, int row)
+    protected virtual Task OnCellLinkClicked(CalendarCell cell, int row, MouseEventArgs? mouseEventArgs = default)
     {
         var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
-        return Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = date, ResourceId = null });
+        return Calendar.CellClicked.InvokeAsync(new CellClickedArgs { MouseEventArgs = mouseEventArgs, Date = date, ResourceId = null });
     }
 
     /// <summary>

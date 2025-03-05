@@ -1,5 +1,6 @@
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Utilities;
@@ -27,20 +28,34 @@ public partial class ResourceView : ComponentBase, IDisposable
     {
         await base.OnAfterRenderAsync(firstRender);
         if (Columns == null || !Columns.Any())
-            return;
+            return;        
+        if (firstRender)
+        {
+            await ScrollToCurrentTime();
+            //await ScrollToDay();
+        }
+    }
+    async Task ScrollToCurrentTime()
+    {
         var time = DateTime.Now.TimeOfDay;
         if (DateTime.Now.Date != Calendar.CurrentDay.Date)
             time = Calendar.DayStartTime.ToTimeSpan();
         await ScrollToTime(time);
-        if (firstRender)
-        {
-            //await ScrollToDay();
-        }
     }
+    DateOnly _lastDay;
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        BuildCols();
+        if (_lastDay != DateOnly.FromDateTime(Calendar.CurrentDay.Date))
+            await ScrollToCurrentTime();
+        _lastDay = DateOnly.FromDateTime(Calendar.CurrentDay.Date);
+    }
+    /*
     protected override void OnParametersSet()
     {
         BuildCols();
-    }
+    }*/
     void BuildCols()
     {
         Columns.Clear();
@@ -185,11 +200,11 @@ public partial class ResourceView : ComponentBase, IDisposable
     /// <param name="row">The row that was clicked.</param>
     /// <param name="resource">The resource the cell belongs to.</param>
     /// <returns></returns>
-    protected virtual async Task OnCellLinkClicked(CalendarCell cell, int row, ResourceItem? resource = default)
+    protected virtual async Task OnCellLinkClicked(CalendarCell cell, int row, ResourceItem? resource = default, MouseEventArgs? mouseEventArgs = default)
     {
         var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
         if (Calendar.CellClicked.HasDelegate)
-            await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = date, ResourceId = resource?.Id });
+            await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { MouseEventArgs = mouseEventArgs, Date = date, ResourceId = resource?.Id });
     }
 
     /// <summary>

@@ -117,7 +117,7 @@
         <MudDropZone T="CalendarItem" OnlyZone="true" Style="@CellHeightStyle()" Identifier="@string.Concat(cell.Date.Date.ToString("d"), "_", row.ToString())">
             @if (Calendar.CellClicked.HasDelegate)
         {
-            <MudLink @onclick="() => OnCellLinkClicked(cell, row)" Class="mud-cal-week-cell-link">
+            <MudLink @onclick="(a) => OnCellLinkClicked(cell, row, a)" Class="mud-cal-week-cell-link">
                 <div class="mud-cal-week-link"></div>
             </MudLink>
         }

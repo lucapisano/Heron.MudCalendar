@@ -1,6 +1,7 @@
 using System.Globalization;
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -128,11 +129,11 @@ public partial class MonthView : CalendarViewBase, IDisposable
     /// </summary>
     /// <param name="cell">The cell that was clicked.</param>
     /// <returns></returns>
-    protected virtual async Task OnCellLinkClicked(CalendarCell cell)
+    protected virtual async Task OnCellLinkClicked(CalendarCell cell, MouseEventArgs? mouseEventArgs = default)
     {
         if (Calendar.CellClicked.HasDelegate)
         {
-            await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = cell.Date, ResourceId = null });
+            await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { Date = cell.Date, ResourceId = null, MouseEventArgs = mouseEventArgs });
         }
     }
 
