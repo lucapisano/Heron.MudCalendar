@@ -31,9 +31,10 @@ public partial class ResourceView : ComponentBase, IDisposable
         await base.OnAfterRenderAsync(firstRender);
         if (Columns == null || !Columns.Any())
             return;        
-        if (firstRender)
+        if (firstRender || scrollRequired)
         {
             await ScrollToCurrentTime();
+            scrollRequired = false;
             //await ScrollToDay();
         }
     }
@@ -45,12 +46,15 @@ public partial class ResourceView : ComponentBase, IDisposable
         await ScrollToTime(time);
     }
     DateOnly _lastDay;
+    bool scrollRequired = false;
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
         BuildCols();
         if (_lastDay != DateOnly.FromDateTime(Calendar.CurrentDay.Date))
-            await ScrollToCurrentTime();
+        {
+            scrollRequired = true;
+        }
         _lastDay = DateOnly.FromDateTime(Calendar.CurrentDay.Date);
     }
     /*
