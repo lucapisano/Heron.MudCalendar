@@ -1,6 +1,7 @@
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Utilities;
@@ -12,6 +13,7 @@ public partial class ResourceView : ComponentBase, IDisposable
 {
     [CascadingParameter]
     public MudCalendar Calendar { get; set; } = new();
+    [Inject] public ILogger<ResourceView> _logger { get; set; }
 
     private ElementReference _scrollDiv;
     private JsService? _jsService;
@@ -316,13 +318,20 @@ public partial class ResourceView : ComponentBase, IDisposable
     {
         if (_scrollDiv.Id == default)
             return;
-        time = time ?? new TimeSpan(Calendar.DayStartTime.Hour, Calendar.DayStartTime.Minute, 0);
-        var startMinutes = (time.Value.Hours * 60) + time.Value.Minutes;
-        var percent = (double)startMinutes / MinutesInDay;
-        var scrollTo = PixelsInDay * percent;
+        try
+        {
+            time = time ?? new TimeSpan(Calendar.DayStartTime.Hour, Calendar.DayStartTime.Minute, 0);
+            var startMinutes = (time.Value.Hours * 60) + time.Value.Minutes;
+            var percent = (double)startMinutes / MinutesInDay;
+            var scrollTo = PixelsInDay * percent;
 
-        _jsService ??= new JsService(JsRuntime);
-        await _jsService.Scroll(_scrollDiv, (int)scrollTo);
+            _jsService ??= new JsService(JsRuntime);
+            await _jsService.Scroll(_scrollDiv, (int)scrollTo);
+        }
+        catch(Exception e)
+        {
+            _logger?.LogError(e, $"unable to {nameof(ScrollToTime)}");
+        }
     }
     private async Task ScrollToDay()
     {
