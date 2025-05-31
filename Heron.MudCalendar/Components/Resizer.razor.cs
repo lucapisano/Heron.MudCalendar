@@ -18,7 +18,7 @@ public partial class Resizer : IAsyncDisposable
 
     [Parameter]
     public string ContainerClass { get; set; } = string.Empty;
-    
+
     [Parameter]
     public int CellCount { get; set; }
 
@@ -68,7 +68,14 @@ public partial class Resizer : IAsyncDisposable
         _this = null;
         if (_resizer != null)
         {
-            await _resizer.DisposeAsync();
+            try
+            {
+                await _resizer.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore JS disconnected exceptions during disposal
+            }
             _resizer = null;
         }
 
