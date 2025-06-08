@@ -85,11 +85,28 @@ public partial class ResourceView : ComponentBase, IDisposable
                 (i.Start.Date <= Calendar.CurrentDay && i.End.HasValue && i.End.Value > Calendar.CurrentDay) //events that started before today and end today or after
               );
             var l = q.OrderBy(i => i.Start).ToList();
-            l = l.Where(i => i.Start.TimeOfDay >= Calendar.DayStartTime.ToTimeSpan() && i.Start.TimeOfDay < Calendar.DayEndTime.ToTimeSpan()).ToList();
+            //remove items that are not in the current day time range or that are not drawable due to hours out of range
+
+            //remove all events that start before the day start time and ends before the day start time
+            l.RemoveAll(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan() 
+                || x.End.HasValue && x.End.Value.TimeOfDay <= Calendar.DayStartTime.ToTimeSpan());
+
+            //l = l.Where(i => i.Start.TimeOfDay >= Calendar.DayStartTime.ToTimeSpan() && i.Start.TimeOfDay < Calendar.DayEndTime.ToTimeSpan()).ToList();
+
+            //overwrite start time for all events that start before the day start time but end after the day start time
+            foreach (var item in l.Where(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan() 
+                && x.End.HasValue && x.End.Value.TimeOfDay > Calendar.DayStartTime.ToTimeSpan()))
+            {
+                item.Start = item.Start.SetTime(Calendar.DayStartTime.ToTimeSpan());
+            }
+
+            //overwrite end time for all events that end after the day end time
             foreach (var item in l.Where(x => x.End.HasValue && x.End.Value.TimeOfDay > Calendar.DayEndTime.ToTimeSpan()))
             {
                 item.End = item.End.Value.SetTime(Calendar.DayEndTime.ToTimeSpan());
             }
+
+            l.RemoveAll(x => x.End.HasValue && x.Start == x.End.Value);
             cell.Items = l;
             Columns.Add(resource, cell);
         }
