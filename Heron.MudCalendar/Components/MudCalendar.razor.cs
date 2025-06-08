@@ -258,6 +258,17 @@ public partial class MudCalendar : MudComponentBase
     [Category(CategoryTypes.Calendar.Behavior)]
     public TimeOnly DayStartTime { get; set; } = new(8, 0);
 
+
+    /// <summary>
+    /// Set the day start time for week/day views.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to <c>08:00</c>.
+    /// </remarks>
+    [Parameter]
+    [Category(CategoryTypes.Calendar.Behavior)]
+    public TimeOnly DayEndTime { get; set; } = new(23, 59, 59);
+
     /// <summary>
     /// Set the time interval of cells in day and week view.
     /// </summary>

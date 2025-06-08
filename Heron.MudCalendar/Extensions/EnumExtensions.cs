@@ -16,4 +16,6 @@ internal static class EnumExtensions
             ? attributes[0].Description
             : value.ToString().ToLower();
     }
+    public static DateTime SetTime(this DateTime s, TimeSpan time) => new DateTime(s.Year, s.Month, s.Day, time.Hours, time.Minutes, time.Seconds);
+    public static DateTime SetTime(this DateTime s, int hours, int minutes, int seconds = 0) => new DateTime(s.Year, s.Month, s.Day, hours, minutes, seconds);
 }

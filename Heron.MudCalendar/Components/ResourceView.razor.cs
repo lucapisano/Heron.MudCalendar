@@ -1,3 +1,4 @@
+using Heron.MudCalendar.Extensions;
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -18,19 +19,25 @@ public partial class ResourceView : ComponentBase, IDisposable
     private ElementReference _scrollDiv;
     private JsService? _jsService;
     Dictionary<ResourceItem, CalendarCell> Columns = new Dictionary<ResourceItem, CalendarCell>();
-    private const int MinutesInDay = 24 * 60;
+    private int MinutesInDay => GetMinutesInDay(); //= 24 * 60;
     private int PixelsInCell => Calendar.DayCellHeight;
 
     private int CellsInDay => MinutesInDay / (int)Calendar.DayTimeInterval;
     private int PixelsInDay => CellsInDay * PixelsInCell;
 
     protected virtual int DaysInView => 1;
+    private int GetMinutesInDay()
+    {
+        if (Calendar.DayStartTime == Calendar.DayEndTime)
+            return 24 * 60;
+        return (int)Math.Ceiling((Calendar.DayEndTime - Calendar.DayStartTime).TotalMinutes);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
         if (Columns == null || !Columns.Any())
-            return;        
+            return;
         if (firstRender || scrollRequired)
         {
             await ScrollToCurrentTime();
@@ -72,13 +79,18 @@ public partial class ResourceView : ComponentBase, IDisposable
             var cell = new CalendarCell { Date = Calendar.CurrentDay.Date };
             if (Calendar.CurrentDay.Date == DateTime.Today) cell.Today = true;
 
-            cell.Items = Calendar.Items.Where(i =>
-                i.ResourceId == resource.Id &&
-                ((i.Start.Date == Calendar.CurrentDay) ||
-                (i.Start.Date <= Calendar.CurrentDay && i.End.HasValue && i.End.Value > Calendar.CurrentDay)))
-            .OrderBy(i => i.Start)
-            .ToList();
-
+            var q = Calendar.Items.Where(i => i.ResourceId == resource.Id);
+            q = q.Where(i =>
+                (i.Start.Date == Calendar.CurrentDay) || //events for today
+                (i.Start.Date <= Calendar.CurrentDay && i.End.HasValue && i.End.Value > Calendar.CurrentDay) //events that started before today and end today or after
+              );
+            var l = q.OrderBy(i => i.Start).ToList();
+            l = l.Where(i => i.Start.TimeOfDay >= Calendar.DayStartTime.ToTimeSpan() && i.Start.TimeOfDay < Calendar.DayEndTime.ToTimeSpan()).ToList();
+            foreach (var item in l.Where(x => x.End.HasValue && x.End.Value.TimeOfDay > Calendar.DayEndTime.ToTimeSpan()))
+            {
+                item.End = item.End.Value.SetTime(Calendar.DayEndTime.ToTimeSpan());
+            }
+            cell.Items = l;
             Columns.Add(resource, cell);
         }
     }
@@ -208,7 +220,9 @@ public partial class ResourceView : ComponentBase, IDisposable
     /// <returns></returns>
     protected virtual async Task OnCellLinkClicked(CalendarCell cell, int row, ResourceItem? resource = default, MouseEventArgs? mouseEventArgs = default)
     {
-        var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
+        var time = GetCellTime(row);
+        var date = cell.Date.Add(time.ToTimeSpan());
+        //var date = cell.Date.AddMinutes(row * (int)Calendar.DayTimeInterval);
         if (Calendar.CellClicked.HasDelegate)
             await Calendar.CellClicked.InvokeAsync(new CellClickedArgs { MouseEventArgs = mouseEventArgs, Date = date, ResourceId = resource?.Id });
     }
@@ -223,6 +237,12 @@ public partial class ResourceView : ComponentBase, IDisposable
         return Calendar.ItemClicked.InvokeAsync(item);
     }
 
+    protected TimeOnly GetCellTime(int row)
+    {
+        var hour = row / (60.0 / (double)Calendar.DayTimeInterval);
+        var timeSpan = TimeSpan.FromHours(hour);
+        return Calendar.DayStartTime.Add(timeSpan);
+    }
     /// <summary>
     /// Creates a string with the time to be displayed.
     /// </summary>
@@ -230,10 +250,7 @@ public partial class ResourceView : ComponentBase, IDisposable
     /// <returns></returns>
     protected virtual string DrawTime(int row)
     {
-        var hour = row / (60.0 / (double)Calendar.DayTimeInterval);
-        var timeSpan = TimeSpan.FromHours(hour);
-        var time = TimeOnly.FromTimeSpan(timeSpan);
-
+        var time = GetCellTime(row);
         return Calendar.Use24HourClock ? time.ToString("HH:mm") : time.ToString("h tt");
     }
 
@@ -272,13 +289,23 @@ public partial class ResourceView : ComponentBase, IDisposable
 
         return position;
     }
-
+    double GetStartMinutes(ItemPosition position)
+        => (position.Item.Start.Hour * 60 + position.Item.Start.Minute)
+                - Calendar.DayStartTime.ToTimeSpan().TotalMinutes;
+    double GetEndMinutes(ItemPosition position)
+    {
+        var end = (position.Item.End.GetValueOrDefault().Hour * 60 + position.Item.End.GetValueOrDefault().Minute)
+                - Calendar.DayStartTime.ToTimeSpan().TotalMinutes;
+        if (end < 0) end = 0;
+        if (end > MinutesInDay) end = MinutesInDay;
+        return end;
+    }
     private int CalcTop(ItemPosition position)
     {
         double minutes = 0;
         if (DateOnly.FromDateTime(position.Item.Start.Date) == position.Date)
         {
-            minutes = position.Item.Start.Hour * 60 + position.Item.Start.Minute;
+            minutes = GetStartMinutes(position);
         }
 
         var percent = minutes / MinutesInDay;
@@ -292,7 +319,7 @@ public partial class ResourceView : ComponentBase, IDisposable
         double start = 0;
         if (DateOnly.FromDateTime(position.Item.Start.Date) == position.Date)
         {
-            start = position.Item.Start.Hour * 60 + position.Item.Start.Minute;
+            start = GetStartMinutes(position);
         }
 
         var end = start + 60;
@@ -301,7 +328,7 @@ public partial class ResourceView : ComponentBase, IDisposable
             end = MinutesInDay;
             if (DateOnly.FromDateTime(position.Item.End.Value.Date) == position.Date)
             {
-                end = position.Item.End.Value.Hour * 60 + position.Item.End.Value.Minute;
+                end = GetEndMinutes(position);
             }
         }
 
@@ -332,7 +359,7 @@ public partial class ResourceView : ComponentBase, IDisposable
             _jsService ??= new JsService(JsRuntime);
             await _jsService.Scroll(_scrollDiv, (int)scrollTo);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             _logger?.LogError(e, $"unable to {nameof(ScrollToTime)}");
         }
@@ -396,8 +423,12 @@ public partial class ResourceView : ComponentBase, IDisposable
         // Calculate the total overlapping events
         foreach (var position in positions)
         {
-            var max = positions.Where(p => p.Top < position.Bottom && p.Bottom > position.Top).Max(p => p.Total);
-
+            var filteredPos = positions.Where(p => p.Top < position.Bottom && p.Bottom > position.Top);
+            int max = 0;
+            if (filteredPos.Any())
+            {
+                max = filteredPos.Max(p => p.Position);
+            }
             if (max > position.Total)
             {
                 position.Total = max;
@@ -443,7 +474,8 @@ public partial class ResourceView : ComponentBase, IDisposable
 
     private bool IsHourCell(int row)
     {
-        return (int)Calendar.DayTimeInterval >= 60 || row % (60 / (int)Calendar.DayTimeInterval) == 0;
+        //return (int)Calendar.DayTimeInterval >= 60 || row % (60 / (int)Calendar.DayTimeInterval) == 0;
+        return true;
     }
 
     public void Dispose()
