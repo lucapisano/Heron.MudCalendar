@@ -352,7 +352,7 @@ public partial class ResourceView : ComponentBase, IDisposable
         try
         {
             time = time ?? new TimeSpan(Calendar.DayStartTime.Hour, Calendar.DayStartTime.Minute, 0);
-            var startMinutes = (time.Value.Hours * 60) + time.Value.Minutes;
+            var startMinutes = (time.Value.Hours * 60) + time.Value.Minutes - Calendar.DayStartTime.ToTimeSpan().TotalMinutes;
             var percent = (double)startMinutes / MinutesInDay;
             var scrollTo = PixelsInDay * percent;
 
@@ -364,6 +364,7 @@ public partial class ResourceView : ComponentBase, IDisposable
             _logger?.LogError(e, $"unable to {nameof(ScrollToTime)}");
         }
     }
+    /*
     private async Task ScrollToDay()
     {
         var startMinutes = (Calendar.DayStartTime.Hour * 60) + Calendar.DayStartTime.Minute;
@@ -373,7 +374,7 @@ public partial class ResourceView : ComponentBase, IDisposable
         _jsService ??= new JsService(JsRuntime);
         await _jsService.Scroll(_scrollDiv, (int)scrollTo);
     }
-
+    */
     protected virtual RenderFragment<CalendarItem> CellTemplate => Calendar.CellTemplate;
 
     private IEnumerable<ItemPosition> CalcPositions(IEnumerable<CalendarItem> items, DateOnly date)
