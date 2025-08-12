@@ -34,7 +34,11 @@ public partial class WeekDropZone : IDisposable
         if (firstRender)
         {
             _jsService ??= new JsService(JsRuntime);
-            await _jsService.AddDragHandler($"mud-cal-{_id}", Position?.Width ?? 1);
+            try
+            {
+                await _jsService.AddDragHandler($"mud-cal-{_id}", Position?.Width ?? 1);
+            }
+            catch (TaskCanceledException) { }
         }
     }
 
