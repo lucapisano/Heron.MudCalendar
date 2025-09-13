@@ -72,10 +72,8 @@ public partial class Resizer : IAsyncDisposable
             {
                 await _resizer.DisposeAsync();
             }
-            catch (JSDisconnectedException)
-            {
-                // Ignore JS disconnected exceptions during disposal
-            }
+            catch (TaskCanceledException) { }
+            catch (JSDisconnectedException) { }
             _resizer = null;
         }
 

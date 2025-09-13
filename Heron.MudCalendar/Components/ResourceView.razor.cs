@@ -475,7 +475,7 @@ public partial class ResourceView : ComponentBase, IDisposable
         var ids = dropItem.DropzoneIdentifier.Split("_");
         if (!DateTime.TryParse(ids[0], out var date)) return;
         var cell = int.Parse(ids[1]);
-        var minutes = ((double)cell / CellsInDay) * MinutesInDay;
+        var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
         date = date.AddMinutes(minutes);
 
         // Update start and end time
