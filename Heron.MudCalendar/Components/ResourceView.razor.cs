@@ -403,7 +403,8 @@ public partial class ResourceView : ComponentBase, IDisposable
             // Check that the end date is valid
             if (item.End.HasValue && item.End <= item.Start)
             {
-                throw new ApplicationException("End date of calendar item must be after start date");
+                _logger?.LogWarning($"End date {item.End} of calendar item must be after start date {item.Start} for item {item.Id}");
+                continue;
             }
 
             // Create new position object
