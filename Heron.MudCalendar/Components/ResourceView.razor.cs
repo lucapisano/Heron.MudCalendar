@@ -284,18 +284,42 @@ public partial class ResourceView : ComponentBase, IDisposable
     }
 
     /// <summary>
-    /// Adjusts the end time of a calendar item based on the specified number of intervals.
+    /// Adjusts the end time when resizing an item (changing its height).
     /// </summary>
-    /// <param name="item">The calendar item whose height is changing.</param>
-    /// <param name="intervals">The number of intervals by which the item's end time should be extended.</param>
-    /// <returns>A task representing the asynchronous operation of invoking the item changed event.</returns>
-    protected Task ItemHeightChanged(CalendarItem item, int intervals)
+    protected async Task ItemHeightChanged(CalendarItem item, int intervals)
     {
-        // Calculate end time from height
         var minutes = intervals * (int)Calendar.DayTimeInterval;
-        item.End = item.Start.AddMinutes(minutes);
+        var proposedEnd = item.Start.AddMinutes(minutes);
 
-        return Calendar.ItemChanged.InvokeAsync(item);
+        var oldEnd = item.End;
+        item.End = proposedEnd;
+
+        if (Calendar.ItemChanging != null)
+        {
+            var allowed = false;
+            try
+            {
+                allowed = await Calendar.ItemChanging(item);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in ItemChanging (resize). Cancelling change.");
+            }
+
+            if (!allowed)
+            {
+                // revert and abort
+                item.End = oldEnd;
+                /*
+                await InvokeAsync(async () => {
+                    BuildCols()
+                });
+                */
+                return;
+            }
+        }
+
+        await Calendar.ItemChanged.InvokeAsync(item);
     }
 
     private double TimelinePosition()
@@ -471,23 +495,47 @@ public partial class ResourceView : ComponentBase, IDisposable
     {
         if (dropItem.Item == null) return;
         var item = dropItem.Item;
+
         var duration = item.End?.Subtract(item.Start) ?? TimeSpan.Zero;
 
         var ids = dropItem.DropzoneIdentifier.Split("_");
         if (!DateTime.TryParse(ids[0], out var date)) return;
         var cell = int.Parse(ids[1]);
         var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
-        date = date.AddMinutes(minutes);
+        var proposedStart = date.AddMinutes(minutes);
+        var proposedEnd = item.End.HasValue ? proposedStart.Add(duration) : (DateTime?)null;
 
-        // Update start and end time
-        item.Start = date;
-        if (item.End.HasValue)
+        // Keep originals to revert on cancellation
+        var oldStart = item.Start;
+        var oldEnd = item.End;
+
+        item.Start = proposedStart;
+        if (proposedEnd.HasValue)
+            item.End = proposedEnd;
+
+        var allowed = true;
+        if (Calendar.ItemChanging != null)
         {
-            item.End = item.Start.Add(duration);
+            try
+            {
+                allowed = await Calendar.ItemChanging(item);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in ItemChanging (drag). Cancelling change.");
+                allowed = false;
+            }
+        }
+
+        if (!allowed)
+        {
+            // revert
+            item.Start = oldStart;
+            item.End = oldEnd;
+            return;
         }
 
         Calendar.Refresh();
-
         await Calendar.ItemChanged.InvokeAsync(item);
     }
 
