@@ -21,6 +21,11 @@ public partial class WeekDropZone : IDisposable
     
     [Parameter]
     public string? Style { get; set; }
+    string GetIdentifier()
+    {
+        return Position?.Item.Id;
+        //string.Concat(Position.Date.Date.ToString("d"), "_", Position.Item.Id);
+    }
 
     private string Classname =>
         new CssBuilder("mud-cal-drop-item")

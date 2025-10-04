@@ -88,13 +88,13 @@ public partial class ResourceView : ComponentBase, IDisposable
             //remove items that are not in the current day time range or that are not drawable due to hours out of range
 
             //remove all events that start before the day start time and ends before the day start time
-            l.RemoveAll(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan() 
+            l.RemoveAll(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan()
                 || x.End.HasValue && x.End.Value.TimeOfDay <= Calendar.DayStartTime.ToTimeSpan());
 
             //l = l.Where(i => i.Start.TimeOfDay >= Calendar.DayStartTime.ToTimeSpan() && i.Start.TimeOfDay < Calendar.DayEndTime.ToTimeSpan()).ToList();
 
             //overwrite start time for all events that start before the day start time but end after the day start time
-            foreach (var item in l.Where(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan() 
+            foreach (var item in l.Where(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan()
                 && x.End.HasValue && x.End.Value.TimeOfDay > Calendar.DayStartTime.ToTimeSpan()))
             {
                 item.Start = item.Start.SetTime(Calendar.DayStartTime.ToTimeSpan());
@@ -498,11 +498,27 @@ public partial class ResourceView : ComponentBase, IDisposable
 
         var duration = item.End?.Subtract(item.Start) ?? TimeSpan.Zero;
 
+        DateTime proposedStart = default;
         var ids = dropItem.DropzoneIdentifier.Split("_");
-        if (!DateTime.TryParse(ids[0], out var date)) return;
-        var cell = int.Parse(ids[1]);
-        var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
-        var proposedStart = date.AddMinutes(minutes);
+        if (!DateTime.TryParse(ids[0], out var date))
+        {
+            //means that the item has been dropped into an invalid zone or onto another item (that covers the target drop zone)
+            //if it has been dropped onto another item, calculate date based on the other item start datetime
+            var existingItem = Calendar.Items.FirstOrDefault(x => x.Id == ids[0]);
+            if (existingItem == null)
+                return;
+            else
+                proposedStart = existingItem.Start;
+        }
+        else
+        {
+            var cell = int.Parse(ids[1]);
+            var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
+            proposedStart = date.AddMinutes(minutes);
+        }
+
+        if (proposedStart == default)
+            return;
         var proposedEnd = item.End.HasValue ? proposedStart.Add(duration) : (DateTime?)null;
 
         // Keep originals to revert on cancellation
