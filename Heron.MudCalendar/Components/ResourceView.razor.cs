@@ -1,3 +1,4 @@
+using System.Globalization;
 using Heron.MudCalendar.Extensions;
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
@@ -491,39 +492,69 @@ public partial class ResourceView : ComponentBase, IDisposable
         return positions;
     }
 
+    private async Task ItemDropped2(MudItemDropInfo<CalendarItem> dropItem)
+    {
+
+    }
     private async Task ItemDropped(MudItemDropInfo<CalendarItem> dropItem)
     {
         if (dropItem.Item == null) return;
         var item = dropItem.Item;
 
-        var duration = item.End?.Subtract(item.Start) ?? TimeSpan.Zero;
+        var oldStart = item.Start;
+        var oldEnd = item.End;
+        var oldResourceId = item.ResourceId;
 
+        var duration = item.End?.Subtract(item.Start) ?? TimeSpan.Zero;
         DateTime proposedStart = default;
-        var ids = dropItem.DropzoneIdentifier.Split("_");
-        if (!DateTime.TryParse(ids[0], out var date))
+        DateTime? proposedEnd = null;
+
+        var id = dropItem.DropzoneIdentifier;
+
+        // Pattern 1: time-slot zone => resourceId|yyyy-MM-dd|row
+        if (id.Contains('|'))
         {
-            //means that the item has been dropped into an invalid zone or onto another item (that covers the target drop zone)
-            //if it has been dropped onto another item, calculate date based on the other item start datetime
-            var existingItem = Calendar.Items.FirstOrDefault(x => x.Id == ids[0]);
-            if (existingItem == null)
-                return;
-            else
-                proposedStart = existingItem.Start;
+            var parts = id.Split('|');
+            if (parts.Length == 3 &&
+                DateTime.TryParseExact(parts[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) &&
+                int.TryParse(parts[2], out var row))
+            {
+                // Update resource
+                item.ResourceId = parts[0];
+                var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)row / CellsInDay) * MinutesInDay;
+                proposedStart = day.Date.AddMinutes(minutes);
+            }
         }
         else
         {
-            var cell = int.Parse(ids[1]);
-            var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
-            proposedStart = date.AddMinutes(minutes);
+            // Legacy patterns:
+            // a) date_row  (still supported if ever used)
+            // b) drop onto another item's zone (zone id == existing item's Id)
+            var parts = id.Split("_");
+            if (parts.Length >= 2 && DateTime.TryParse(parts[0], out var date))
+            {
+                if (int.TryParse(parts[1], out var cell))
+                {
+                    var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
+                    proposedStart = date.AddMinutes(minutes);
+                }
+            }
+            else
+            {
+                // Dropped onto another item
+                var existingItem = Calendar.Items.FirstOrDefault(x => x.Id == parts[0]);
+                if (existingItem != null)
+                {
+                    proposedStart = existingItem.Start;
+                    item.ResourceId = existingItem.ResourceId;
+                }
+            }
         }
 
         if (proposedStart == default)
             return;
-        var proposedEnd = item.End.HasValue ? proposedStart.Add(duration) : (DateTime?)null;
 
-        // Keep originals to revert on cancellation
-        var oldStart = item.Start;
-        var oldEnd = item.End;
+        proposedEnd = item.End.HasValue ? proposedStart.Add(duration) : (DateTime?)null;
 
         item.Start = proposedStart;
         if (proposedEnd.HasValue)
@@ -545,9 +576,10 @@ public partial class ResourceView : ComponentBase, IDisposable
 
         if (!allowed)
         {
-            // revert
+            // revert all
             item.Start = oldStart;
             item.End = oldEnd;
+            item.ResourceId = oldResourceId;
             return;
         }
 
