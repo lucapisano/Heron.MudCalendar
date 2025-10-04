@@ -491,11 +491,6 @@ public partial class ResourceView : ComponentBase, IDisposable
 
         return positions;
     }
-
-    private async Task ItemDropped2(MudItemDropInfo<CalendarItem> dropItem)
-    {
-
-    }
     private async Task ItemDropped(MudItemDropInfo<CalendarItem> dropItem)
     {
         if (dropItem.Item == null) return;
