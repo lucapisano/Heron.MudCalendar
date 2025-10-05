@@ -1,3 +1,4 @@
+using System.Globalization;
 using Heron.MudCalendar.Extensions;
 using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
@@ -88,13 +89,13 @@ public partial class ResourceView : ComponentBase, IDisposable
             //remove items that are not in the current day time range or that are not drawable due to hours out of range
 
             //remove all events that start before the day start time and ends before the day start time
-            l.RemoveAll(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan() 
+            l.RemoveAll(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan()
                 || x.End.HasValue && x.End.Value.TimeOfDay <= Calendar.DayStartTime.ToTimeSpan());
 
             //l = l.Where(i => i.Start.TimeOfDay >= Calendar.DayStartTime.ToTimeSpan() && i.Start.TimeOfDay < Calendar.DayEndTime.ToTimeSpan()).ToList();
 
             //overwrite start time for all events that start before the day start time but end after the day start time
-            foreach (var item in l.Where(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan() 
+            foreach (var item in l.Where(x => x.Start.TimeOfDay < Calendar.DayStartTime.ToTimeSpan()
                 && x.End.HasValue && x.End.Value.TimeOfDay > Calendar.DayStartTime.ToTimeSpan()))
             {
                 item.Start = item.Start.SetTime(Calendar.DayStartTime.ToTimeSpan());
@@ -284,18 +285,42 @@ public partial class ResourceView : ComponentBase, IDisposable
     }
 
     /// <summary>
-    /// Adjusts the end time of a calendar item based on the specified number of intervals.
+    /// Adjusts the end time when resizing an item (changing its height).
     /// </summary>
-    /// <param name="item">The calendar item whose height is changing.</param>
-    /// <param name="intervals">The number of intervals by which the item's end time should be extended.</param>
-    /// <returns>A task representing the asynchronous operation of invoking the item changed event.</returns>
-    protected Task ItemHeightChanged(CalendarItem item, int intervals)
+    protected async Task ItemHeightChanged(CalendarItem item, int intervals)
     {
-        // Calculate end time from height
         var minutes = intervals * (int)Calendar.DayTimeInterval;
-        item.End = item.Start.AddMinutes(minutes);
+        var proposedEnd = item.Start.AddMinutes(minutes);
 
-        return Calendar.ItemChanged.InvokeAsync(item);
+        var oldEnd = item.End;
+        item.End = proposedEnd;
+
+        if (Calendar.ItemChanging != null)
+        {
+            var allowed = false;
+            try
+            {
+                allowed = await Calendar.ItemChanging(item);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in ItemChanging (resize). Cancelling change.");
+            }
+
+            if (!allowed)
+            {
+                // revert and abort
+                item.End = oldEnd;
+                /*
+                await InvokeAsync(async () => {
+                    BuildCols()
+                });
+                */
+                return;
+            }
+        }
+
+        await Calendar.ItemChanged.InvokeAsync(item);
     }
 
     private double TimelinePosition()
@@ -403,7 +428,8 @@ public partial class ResourceView : ComponentBase, IDisposable
             // Check that the end date is valid
             if (item.End.HasValue && item.End <= item.Start)
             {
-                throw new ApplicationException("End date of calendar item must be after start date");
+                _logger?.LogWarning($"End date {item.End} of calendar item must be after start date {item.Start} for item {item.Id}");
+                continue;
             }
 
             // Create new position object
@@ -465,28 +491,94 @@ public partial class ResourceView : ComponentBase, IDisposable
 
         return positions;
     }
-
     private async Task ItemDropped(MudItemDropInfo<CalendarItem> dropItem)
     {
         if (dropItem.Item == null) return;
         var item = dropItem.Item;
+
+        var oldStart = item.Start;
+        var oldEnd = item.End;
+        var oldResourceId = item.ResourceId;
+
         var duration = item.End?.Subtract(item.Start) ?? TimeSpan.Zero;
+        DateTime proposedStart = default;
+        DateTime? proposedEnd = null;
 
-        var ids = dropItem.DropzoneIdentifier.Split("_");
-        if (!DateTime.TryParse(ids[0], out var date)) return;
-        var cell = int.Parse(ids[1]);
-        var minutes = ((double)cell / CellsInDay) * MinutesInDay;
-        date = date.AddMinutes(minutes);
+        var id = dropItem.DropzoneIdentifier;
 
-        // Update start and end time
-        item.Start = date;
-        if (item.End.HasValue)
+        // Pattern 1: time-slot zone => resourceId|yyyy-MM-dd|row
+        if (id.Contains('|'))
         {
-            item.End = item.Start.Add(duration);
+            var parts = id.Split('|');
+            if (parts.Length == 3 &&
+                DateTime.TryParseExact(parts[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) &&
+                int.TryParse(parts[2], out var row))
+            {
+                // Update resource
+                item.ResourceId = parts[0];
+                var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)row / CellsInDay) * MinutesInDay;
+                proposedStart = day.Date.AddMinutes(minutes);
+            }
+        }
+        else
+        {
+            // Legacy patterns:
+            // a) date_row  (still supported if ever used)
+            // b) drop onto another item's zone (zone id == existing item's Id)
+            var parts = id.Split("_");
+            if (parts.Length >= 2 && DateTime.TryParse(parts[0], out var date))
+            {
+                if (int.TryParse(parts[1], out var cell))
+                {
+                    var minutes = Calendar.DayStartTime.ToTimeSpan().TotalMinutes + ((double)cell / CellsInDay) * MinutesInDay;
+                    proposedStart = date.AddMinutes(minutes);
+                }
+            }
+            else
+            {
+                // Dropped onto another item
+                var existingItem = Calendar.Items.FirstOrDefault(x => x.Id == parts[0]);
+                if (existingItem != null)
+                {
+                    proposedStart = existingItem.Start;
+                    item.ResourceId = existingItem.ResourceId;
+                }
+            }
+        }
+
+        if (proposedStart == default)
+            return;
+
+        proposedEnd = item.End.HasValue ? proposedStart.Add(duration) : (DateTime?)null;
+
+        item.Start = proposedStart;
+        if (proposedEnd.HasValue)
+            item.End = proposedEnd;
+
+        var allowed = true;
+        if (Calendar.ItemChanging != null)
+        {
+            try
+            {
+                allowed = await Calendar.ItemChanging(item);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in ItemChanging (drag). Cancelling change.");
+                allowed = false;
+            }
+        }
+
+        if (!allowed)
+        {
+            // revert all
+            item.Start = oldStart;
+            item.End = oldEnd;
+            item.ResourceId = oldResourceId;
+            return;
         }
 
         Calendar.Refresh();
-
         await Calendar.ItemChanged.InvokeAsync(item);
     }
 

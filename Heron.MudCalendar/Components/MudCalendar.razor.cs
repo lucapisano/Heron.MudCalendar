@@ -413,6 +413,13 @@ public partial class MudCalendar : MudComponentBase
     public EventCallback<CalendarItem> ItemChanged { get; set; }
 
     /// <summary>
+    /// Called before an item is changed (drag/resize). Return true to allow the change, false to cancel it.
+    /// The CalendarItem instance passed already contains the proposed new values (Start/End/ResourceId, etc.).
+    /// </summary>
+    [Parameter]
+    public Func<CalendarItem, Task<bool>>? ItemChanging { get; set; }
+
+    /// <summary>
     /// Called when the View is changed.
     /// </summary>
     [Parameter]
@@ -690,7 +697,7 @@ public partial class MudCalendar : MudComponentBase
         _datePicker?.GoToDate(CurrentDay);
     }
 
-    private async Task ChangeDateRange()
+    public async Task ChangeDateRange()
     {
         await ChangeDateRange(new CalendarDateRange(CurrentDay, View, GetFirstDayOfWeekByCalendarView(View)));
     }
