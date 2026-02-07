@@ -4,6 +4,7 @@ using Heron.MudCalendar.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Utilities;
@@ -19,6 +20,7 @@ public partial class ResourceView : ComponentBase, IDisposable
 
     private ElementReference _scrollDiv;
     private JsService? _jsService;
+    private DotNetObjectReference<ResourceView>? _dotNetRef;
     Dictionary<ResourceItem, CalendarCell> Columns = new Dictionary<ResourceItem, CalendarCell>();
     private int MinutesInDay => GetMinutesInDay(); //= 24 * 60;
     private int PixelsInCell => Calendar.DayCellHeight;
@@ -43,8 +45,59 @@ public partial class ResourceView : ComponentBase, IDisposable
         {
             await ScrollToCurrentTime();
             scrollRequired = false;
-            //await ScrollToDay();
+            
+            // Register for pointer-based drop events (WebView2 fix)
+            await RegisterPointerDropHandler();
         }
+    }
+
+    /// <summary>
+    /// Registers a JavaScript event listener to handle pointer-based drag-drop events.
+    /// This is needed for WebView2 where native HTML5 drag-drop doesn't work with mouse.
+    /// </summary>
+    private async Task RegisterPointerDropHandler()
+    {
+        try
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            
+            // First, define the helper function to store the reference
+            await JsRuntime.InvokeVoidAsync("eval", @"
+                window.__setResourceViewRef = function(ref) { 
+                    window.__resourceViewDotNetRef = ref;
+                    console.log('ResourceView DotNetRef set:', !!ref);
+                };
+            ");
+            
+            // Then pass the DotNetObjectReference to JavaScript
+            await JsRuntime.InvokeVoidAsync("__setResourceViewRef", _dotNetRef);
+            
+            _logger?.LogInformation("Pointer drop handler registered successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to register pointer drop handler - this is normal for non-WebView2 environments");
+        }
+    }
+
+    /// <summary>
+    /// Called from JavaScript when a pointer-based drop occurs (WebView2 fix).
+    /// </summary>
+    [JSInvokable]
+    public async Task OnPointerDropAsync(string itemId, string targetZoneId)
+    {
+        _logger?.LogInformation("OnPointerDropAsync: {ItemId} -> {TargetZoneId}", itemId, targetZoneId);
+        
+        var item = Calendar.Items.FirstOrDefault(x => x.Id == itemId);
+        if (item == null)
+        {
+            _logger?.LogWarning("Item not found: {ItemId}", itemId);
+            return;
+        }
+
+        // Create a MudItemDropInfo and call the existing ItemDropped handler
+        var dropInfo = new MudItemDropInfo<CalendarItem>(item, targetZoneId, 0);
+        await ItemDropped(dropInfo);
     }
     async Task ScrollToCurrentTime()
     {
@@ -593,5 +646,6 @@ public partial class ResourceView : ComponentBase, IDisposable
         GC.SuppressFinalize(this);
 
         _jsService?.Dispose();
+        _dotNetRef?.Dispose();
     }
 }
