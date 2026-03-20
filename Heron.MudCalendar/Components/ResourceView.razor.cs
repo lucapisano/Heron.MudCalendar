@@ -72,7 +72,7 @@ public partial class ResourceView : ComponentBase, IDisposable
             // Then pass the DotNetObjectReference to JavaScript
             await JsRuntime.InvokeVoidAsync("__setResourceViewRef", _dotNetRef);
             
-            _logger?.LogInformation("Pointer drop handler registered successfully");
+            _logger?.LogDebug("Pointer drop handler registered successfully");
         }
         catch (Exception ex)
         {
