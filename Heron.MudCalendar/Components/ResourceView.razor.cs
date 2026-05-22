@@ -76,7 +76,7 @@ public partial class ResourceView : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to register pointer drop handler - this is normal for non-WebView2 environments");
+            _logger?.LogDebug(ex, "Failed to register pointer drop handler - this is normal for non-WebView2 environments");
         }
     }
 
