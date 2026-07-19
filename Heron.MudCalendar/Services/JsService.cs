@@ -24,6 +24,12 @@ public class JsService : IDisposable
         var module = await _moduleTask.Value;
         await module.InvokeVoidAsync("scroll", element, top);
     }
+
+    public async Task<double> GetScrollbarWidth(ElementReference element)
+    {
+        var module = await _moduleTask.Value;
+        return await module.InvokeAsync<double>("getScrollbarWidth", element);
+    }
     
     public async Task<string> GetHeadContent()
     {

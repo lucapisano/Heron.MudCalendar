@@ -9,10 +9,10 @@
             <div>
                 <div class="@HeaderClass">
                     <div></div>
-                    <div style="display: flex">
+                    <div style="@($"display: flex; padding-right: {ScrollbarCompensationPx.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;")">
                         @foreach (var resource in Calendar.Resources)
                         {
-                            <div style="flex: auto; min-width: 200px;">
+                            <div style="flex: 1 1 0; min-width: 200px; overflow: hidden;">
                                 @(Calendar.HeaderTemplate(resource))
                             </div>
                             <MudDivider FlexItem Vertical></MudDivider>

@@ -49,6 +49,37 @@ public partial class ResourceView : ComponentBase, IDisposable
             // Register for pointer-based drop events (WebView2 fix)
             await RegisterPointerDropHandler();
         }
+        // Measure the scrollbar reserved by the scrollable body so the (non-scrolling) header
+        // row can compensate with matching padding, keeping the resource column dividers
+        // vertically aligned between the header and the booking grid below it. Re-measured on
+        // every render since the day's content height (and thus scrollbar presence) can change.
+        await MeasureScrollbarWidthAsync();
+    }
+
+    private double _scrollbarCompensationPxValue;
+
+    /// <summary>
+    /// Padding (in px) applied to the header row to compensate for the vertical scrollbar
+    /// reserved by the scrollable body, keeping the resource column dividers aligned.
+    /// </summary>
+    protected double ScrollbarCompensationPx => _scrollbarCompensationPxValue;
+
+    private async Task MeasureScrollbarWidthAsync()
+    {
+        try
+        {
+            _jsService ??= new JsService(JsRuntime);
+            var width = await _jsService.GetScrollbarWidth(_scrollDiv);
+            if (width >= 0 && Math.Abs(width - _scrollbarCompensationPxValue) > 0.5)
+            {
+                _scrollbarCompensationPxValue = width;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "Failed to measure scrollbar width for resource header alignment");
+        }
     }
 
     /// <summary>
