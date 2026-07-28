@@ -10,55 +10,44 @@ public class CalendarDateRange : DateRange
     private readonly DateTime _currentDay;
 
     public CalendarDateRange(DateTime currentDay, CalendarView view, DayOfWeek? firstDayOfWeek = null)
+        : base(GetStart(currentDay, view, firstDayOfWeek), GetEnd(currentDay, view, firstDayOfWeek))
     {
         _currentDay = currentDay;
         View = view;
-        
-        SetStart(firstDayOfWeek);
-        SetEnd(firstDayOfWeek);
     }
 
-    private void SetStart(DayOfWeek? firstDayOfWeek)
+    private static DateTime GetStart(DateTime currentDay, CalendarView view, DayOfWeek? firstDayOfWeek)
     {
-        switch (View)
+        switch (view)
         {
             case CalendarView.Day:
-                Start = _currentDay.Date;
-                break;
+                return currentDay.Date;
             case CalendarView.Resource:
-                Start = _currentDay.Date;
-                break;
+                return currentDay.Date;
             case CalendarView.Week:
             case CalendarView.WorkWeek:
-                Start = GetFirstWeekDate(_currentDay, firstDayOfWeek);
-                break;
+                return GetFirstWeekDate(currentDay, firstDayOfWeek);
             case CalendarView.Month:
             default:
-                Start = GetFirstMonthDate(_currentDay);
-                break;
+                return GetFirstMonthDate(currentDay);
         }
     }
 
-    private void SetEnd(DayOfWeek? firstDayOfWeek)
+    private static DateTime GetEnd(DateTime currentDay, CalendarView view, DayOfWeek? firstDayOfWeek)
     {
-        switch (View)
+        switch (view)
         {
             case CalendarView.Day:
-                End = _currentDay.Date;
-                break;
+                return currentDay.Date;
             case CalendarView.Resource:
-                End = _currentDay.Date;
-                break;
+                return currentDay.Date;
             case CalendarView.Week:
-                End = GetLastWeekDate(_currentDay, firstDayOfWeek);
-                break;
+                return GetLastWeekDate(currentDay, firstDayOfWeek);
             case CalendarView.WorkWeek:
-                End = GetLastWorkWeekDate(_currentDay, firstDayOfWeek);
-                break;
+                return GetLastWorkWeekDate(currentDay, firstDayOfWeek);
             case CalendarView.Month:
             default:
-                End = GetLastMonthDate(_currentDay);
-                break;
+                return GetLastMonthDate(currentDay);
         }
     }
     

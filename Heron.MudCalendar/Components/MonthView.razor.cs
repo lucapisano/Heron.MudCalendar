@@ -113,7 +113,7 @@ public partial class MonthView : CalendarViewBase, IDisposable
         return new StyleBuilder()
             .AddStyle("border-right", "none",
                 (index + 1) % Columns == 0 && !(calendarCell.Today && Calendar.HighlightToday))
-            .AddStyle("border", $"1px solid var(--mud-palette-{Calendar.Color.ToDescriptionString()})",
+            .AddStyle("border", $"1px solid var(--mud-palette-{Heron.MudCalendar.Extensions.EnumExtensions.ToDescriptionString(Calendar.Color)})",
                 calendarCell.Today && Calendar.HighlightToday)
             .AddStyle("width", $"{(100.0 / Columns).ToInvariantString()}%")
             .Build();
