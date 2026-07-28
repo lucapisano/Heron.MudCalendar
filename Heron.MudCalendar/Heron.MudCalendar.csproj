@@ -63,7 +63,8 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="MudBlazor" Version="9.*" /> <!-- FROM 8.12.0-->
+        <PackageReference Include="MudBlazor" Version="9.7.0" /> <!-- FROM 8.12.0-->
+		<!--do not set 9.*, instead always ensure a specific version is used-->
 		<PackageReference Include="Microsoft.AspNetCore.Components" Version="9.*" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.*" />
 		<PackageReference Include="Microsoft.Extensions.Localization" Version="9.*" />
